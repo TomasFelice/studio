@@ -1,9 +1,9 @@
 "use client"
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useCart } from '@/context/CartContext';
 import { createOrderAction, type State } from '@/lib/actions';
-import { useEffect } from 'react';
+import { useEffect, useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ export default function CheckoutPage() {
     const { cartItems, cartTotal, clearCart } = useCart();
     const initialState: State = { message: null, errors: {} };
     const createOrderWithCart = createOrderAction.bind(null);
-    const [state, dispatch] = useFormState(createOrderWithCart, initialState);
+    const [state, dispatch] = useActionState(createOrderWithCart, initialState);
     const { toast } = useToast();
 
     useEffect(() => {
