@@ -1,28 +1,32 @@
 "use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Plus, Minus } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
   const handleAddToCart = () => {
-    addToCart(product, 1);
+    addToCart(product, quantity);
     toast({
       title: "¡Agregado!",
-      description: `1 x ${product.name} se agregó a tu carrito.`,
+      description: `${quantity} x ${product.name} se agregó a tu carrito.`,
     });
+    setQuantity(1); // Reset quantity
   };
   
   return (
@@ -44,13 +48,29 @@ export function ProductCard({ product }: ProductCardProps) {
           <CardTitle className="text-lg font-body font-semibold leading-tight">{product.name}</CardTitle>
         </CardContent>
       </Link>
-      <CardFooter className="p-4 pt-0">
-         <div className="w-full flex justify-between items-center">
-           <p className="text-xl font-bold text-primary">${product.price.toLocaleString('es-AR')}</p>
-           <Button variant="secondary" size="sm" onClick={handleAddToCart}>
-              <ShoppingCart />
-              Agregar
-           </Button>
+      <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3">
+         <p className="text-xl font-bold text-primary w-full">${product.price.toLocaleString('es-AR')}</p>
+         <div className="w-full flex items-center gap-2">
+            <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => {e.preventDefault(); setQuantity(q => Math.max(1, q - 1))}}>
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                    type="number"
+                    value={quantity}
+                    onClick={(e) => e.preventDefault()}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-12 h-8 text-center"
+                    min="1"
+                />
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => {e.preventDefault(); setQuantity(q => q + 1)}}>
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+            <Button variant="secondary" size="sm" onClick={(e) => {e.preventDefault(); handleAddToCart()}} className="flex-grow">
+                <ShoppingCart/>
+                Agregar
+            </Button>
          </div>
       </CardFooter>
     </Card>
