@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { ArrowLeft, Minus, Plus, ShoppingCart } from 'lucide-react';
 import {
   Carousel,
@@ -21,7 +21,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -29,6 +30,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!params.id) {
+        return;
+    }
     const fetchProduct = async () => {
       setLoading(true);
       const fetchedProduct = await getProductById(params.id);
