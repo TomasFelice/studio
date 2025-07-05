@@ -1,9 +1,9 @@
 "use server";
 
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createOrder, getProductById } from './data';
-import type { CartItem, OrderItem } from './types';
+import type { CartItem, Order, OrderItem } from './types';
+import { revalidatePath } from 'next/cache';
 
 const orderSchema = z.object({
   name: z.string().min(3, "El nombre es requerido."),
@@ -20,9 +20,11 @@ export type State = {
     cart?: string[];
   };
   message?: string | null;
+  success?: boolean;
+  orderId?: string;
 };
 
-async function sendWhatsAppNotification(order: Awaited<ReturnType<typeof createOrder>>) {
+async function sendWhatsAppNotification(order: Order) {
     // This is a placeholder for the actual WhatsApp API integration.
     // In a real application, you would use Twilio, Meta API, etc.
     const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\n');
@@ -31,7 +33,7 @@ async function sendWhatsAppNotification(order: Awaited<ReturnType<typeof createO
 📦 ¡Nuevo pedido en PuraBombilla! 📦
 
 *N° de Pedido:* ${order.id}
-*Fecha:* ${order.createdAt.toLocaleString('es-AR')}
+*Fecha:* ${new Date(order.createdAt).toLocaleString('es-AR')}
 
 *Cliente:*
 - *Nombre:* ${order.customerName}
@@ -61,7 +63,7 @@ ${order.customerAddress}
 }
 
 
-export async function createOrderAction(prevState: State, formData: FormData) {
+export async function createOrderAction(prevState: State, formData: FormData): Promise<State> {
   const validatedFields = orderSchema.safeParse({
     name: formData.get('name'),
     whatsapp: formData.get('whatsapp'),
@@ -95,7 +97,9 @@ export async function createOrderAction(prevState: State, formData: FormData) {
     for (const item of cartItems) {
         const product = await getProductById(item.id);
         if(!product) {
-            throw new Error(`Producto con ID ${item.id} no encontrado.`);
+            // This case should ideally not happen if items are from the cart
+            // but it's good practice to handle it.
+            return { message: `El producto "${item.name}" ya no está disponible.` };
         }
         orderItems.push({
             productId: product.id,
@@ -117,10 +121,12 @@ export async function createOrderAction(prevState: State, formData: FormData) {
     // Send notification
     await sendWhatsAppNotification(newOrder);
 
-    // Redirect to confirmation page
-    redirect(`/order-confirmation/${newOrder.id}`);
+    revalidatePath('/admin/orders');
+
+    return { success: true, orderId: newOrder.id, message: null, errors: {} };
 
   } catch (error) {
+    console.error("Error creating order action:", error);
     return {
       message: 'Error en la base de datos: No se pudo crear el pedido.',
     };
