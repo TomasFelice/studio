@@ -1,24 +1,11 @@
-import {NextRequest, NextResponse} from 'next/server';
-import {initializeApp, getApps, cert} from 'firebase-admin/app';
-import {getAuth} from 'firebase-admin/auth';
-
-try {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY!
-    );
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  }
-} catch (error: any) {
-  console.error('Firebase admin initialization error', error.stack);
-}
+// middleware.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
 
-  // If no session cookie, redirect to login for admin pages, otherwise continue.
+  // Si no hay cookie de sesión, redirigir a login para páginas admin
   if (!session) {
     if (request.nextUrl.pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -26,25 +13,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verify the session cookie. If invalid, redirect to login and clear the cookie.
+  // Verificar la sesión en el servidor usando una API route
   try {
-    await getAuth().verifySessionCookie(session, true);
+    const verifyUrl = new URL('/api/verify-session', request.url);
+    const response = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ session }),
+    });
+
+    if (!response.ok) {
+      // Sesión inválida
+      const loginResponse = NextResponse.redirect(new URL('/login', request.url));
+      loginResponse.cookies.delete('session');
+      return loginResponse;
+    }
   } catch (error) {
-    const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('session');
-    return response;
+    console.error('Error verifying session:', error);
+    const loginResponse = NextResponse.redirect(new URL('/login', request.url));
+    loginResponse.cookies.delete('session');
+    return loginResponse;
   }
 
-  // If the user is authenticated and visits the login page, redirect to the admin dashboard.
+  // Si está autenticado y visita login, redirigir a admin
   if (request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
 
   return NextResponse.next();
 }
-
-// Force middleware to run on Node.js runtime.
-export const runtime = 'nodejs';
 
 export const config = {
   matcher: ['/admin/:path*', '/login'],
