@@ -1,32 +1,24 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-
-// Ensure Firebase Admin is initialized
-if (!getApps().length) {
-  try {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY!
-    );
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error in API route:', error.message);
-  }
-}
+import { auth } from '@/lib/firebase/admin';
 
 export async function POST(request: NextRequest) {
-  const { session } = await request.json();
+  const session = request.cookies.get('session')?.value;
+
+  if (!auth) {
+    console.error("Auth service is not available for session verification.");
+    return NextResponse.json({ valid: false, message: 'Authentication service not configured.' }, { status: 500 });
+  }
 
   if (!session) {
-    return NextResponse.json({ message: 'No session provided' }, { status: 401 });
+    return NextResponse.json({ valid: false, message: 'No session provided' }, { status: 401 });
   }
 
   try {
-    await getAuth().verifySessionCookie(session, true);
+    // Setting checkRevoked to true is important for security
+    await auth.verifySessionCookie(session, true);
     return NextResponse.json({ valid: true }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Invalid session' }, { status: 401 });
+    // Session is invalid
+    return NextResponse.json({ valid: false }, { status: 401 });
   }
 }

@@ -2,7 +2,6 @@
 "use server";
 
 import { z } from 'zod';
-import { createOrder, getProductById, createProduct, updateProduct, deleteProduct, updateOrderStatus } from './data';
 import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -109,6 +108,7 @@ export async function createOrderAction(prevState: State, formData: FormData): P
   }
 
   try {
+    const { getProductById, createOrder } = await import('./data');
     const orderItems: OrderItem[] = [];
     let total = 0;
 
@@ -167,6 +167,7 @@ const manualOrderSchema = z.object({
 
 export async function createManualOrderAction(data: z.infer<typeof manualOrderSchema>) {
     try {
+        const { createOrder } = await import('./data');
         const total = data.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         
         const newOrder = await createOrder({
@@ -190,6 +191,7 @@ export async function createManualOrderAction(data: z.infer<typeof manualOrderSc
 
 export async function updateOrderStatusAction(id: string, status: Order['status']) {
     try {
+        const { updateOrderStatus } = await import('./data');
         await updateOrderStatus(id, status);
         revalidatePath(`/admin/orders/${id}`);
         revalidatePath(`/admin/orders`);
@@ -202,6 +204,7 @@ export async function updateOrderStatusAction(id: string, status: Order['status'
 
 // PRODUCT ACTIONS
 export async function getProductByIdAction(id: string): Promise<Product | null> {
+    const { getProductById } = await import('./data');
     return getProductById(id);
 }
 
@@ -217,6 +220,7 @@ const productSchema = z.object({
 
 
 export async function createOrUpdateProductAction(data: z.infer<typeof productSchema>) {
+    const { createProduct, updateProduct } = await import('./data');
     const validatedFields = productSchema.safeParse(data);
 
     if (!validatedFields.success) {
@@ -246,6 +250,7 @@ export async function createOrUpdateProductAction(data: z.infer<typeof productSc
 
 export async function deleteProductAction(id: string) {
     try {
+        const { deleteProduct } = await import('./data');
         const success = await deleteProduct(id);
         if (success) {
             revalidatePath('/admin/products');
