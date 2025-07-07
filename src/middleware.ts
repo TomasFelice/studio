@@ -10,7 +10,17 @@ export async function middleware(request: NextRequest) {
   const isTryingToAccessAdmin = request.nextUrl.pathname.startsWith('/admin');
   const isTryingToAccessLogin = request.nextUrl.pathname === '/login';
 
-  // If there's no session cookie, handle redirection
+  // If auth service is not configured, we can't verify sessions.
+  // This is a critical server error. Treat as unauthenticated.
+  if (!auth) {
+    console.error("CRITICAL: Auth service is not configured on the server. Check Firebase Admin initialization in logs.");
+    if (isTryingToAccessAdmin) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // If there's no session cookie, redirect to login if accessing admin pages
   if (!session) {
     if (isTryingToAccessAdmin) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -20,9 +30,6 @@ export async function middleware(request: NextRequest) {
 
   // If there is a session, verify it
   try {
-    if (!auth) {
-        throw new Error("Auth service is not configured on the server.");
-    }
     await auth.verifySessionCookie(session, true);
     
     // Session is valid. If user is on login page, redirect to admin.
@@ -31,8 +38,9 @@ export async function middleware(request: NextRequest) {
     }
 
   } catch (error) {
+    // Session is invalid.
     console.error("Session verification failed:", error);
-    // Session is invalid. Redirect to login if trying to access admin pages.
+    // Redirect to login if trying to access admin pages.
     if (isTryingToAccessAdmin) {
         const response = NextResponse.redirect(new URL('/login', request.url));
         response.cookies.delete('session'); // Clear the invalid cookie

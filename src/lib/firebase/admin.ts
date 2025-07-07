@@ -1,31 +1,27 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
 
-let authInstance: Auth | null = null;
-let dbInstance: Firestore | null = null;
+function getAdminApp(): App | null {
+  if (getApps().length > 0) {
+    return getApps()[0];
+  }
 
-if (!getApps().length) {
   try {
     const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY!
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
     );
-    initializeApp({
+
+    return initializeApp({
       credential: cert(serviceAccount),
     });
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error', error.message || String(error));
+    console.error("CRITICAL: Firebase Admin SDK initialization failed. Check your FIREBASE_SERVICE_ACCOUNT_KEY environment variable.", error.message);
+    return null;
   }
 }
 
-if (getApps().length > 0) {
-    try {
-        authInstance = getAuth();
-        dbInstance = getFirestore();
-    } catch(e) {
-        console.error('Firebase Admin SDK service error', e);
-    }
-}
+const app = getAdminApp();
 
-export const auth = authInstance;
-export const db = dbInstance;
+export const auth: Auth | null = app ? getAuth(app) : null;
+export const db: Firestore | null = app ? getFirestore(app) : null;

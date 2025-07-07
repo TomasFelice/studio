@@ -5,11 +5,11 @@ import { z } from 'zod';
 import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { auth } from '@/lib/firebase/admin';
 import { redirect } from 'next/navigation';
 
 // AUTH ACTIONS
 export async function createSession(idToken: string) {
+    const { auth } = await import('@/lib/firebase/admin');
     if (!auth) {
         console.error("Auth service is not available for session creation.");
         return { success: false, error: "Authentication service not configured." };
