@@ -10,8 +10,9 @@ import {
   SidebarInset,
   SidebarFooter,
 } from "@/components/ui/sidebar"
-import { Home, Package, ShoppingCart, User } from "lucide-react"
+import { Home, Package, ShoppingCart, User, LogOut } from "lucide-react"
 import Link from "next/link"
+import { removeSession } from "@/lib/actions"
 
 export default function AdminLayout({
   children,
@@ -52,6 +53,13 @@ export default function AdminLayout({
                          <SidebarMenuButton asChild tooltip="Mi Cuenta">
                             <Link href="#"><User/>Admin</Link>
                         </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <form action={removeSession} className="w-full">
+                            <SidebarMenuButton type="submit" className="w-full" tooltip="Cerrar Sesión">
+                                <LogOut/>Cerrar Sesión
+                            </SidebarMenuButton>
+                        </form>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
