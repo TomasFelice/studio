@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from 'zod';
-import { createOrder, getProductById, createProduct, updateProduct } from './data';
+import { createOrder, getProductById, createProduct, updateProduct, deleteProduct } from './data';
 import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -218,5 +218,21 @@ export async function createOrUpdateProductAction(data: z.infer<typeof productSc
     } catch (error) {
         console.error("Error creating/updating product:", error);
         return { success: false, message: "No se pudo guardar el producto." };
+    }
+}
+
+export async function deleteProductAction(id: string) {
+    try {
+        const success = await deleteProduct(id);
+        if (success) {
+            revalidatePath('/admin/products');
+            revalidatePath('/products');
+            revalidatePath('/');
+            return { success: true };
+        }
+        return { success: false, message: "No se pudo eliminar el producto de la base de datos." };
+    } catch (error) {
+        console.error("Error deleting product action:", error);
+        return { success: false, message: "Ocurrió un error en el servidor al intentar eliminar el producto." };
     }
 }

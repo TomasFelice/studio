@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
-import { deleteProduct } from "@/lib/data";
+import { deleteProductAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 
 
@@ -35,18 +35,18 @@ export default function ProductsTable({ products }: { products: Product[] }) {
     const router = useRouter();
 
     const handleDelete = async (id: string) => {
-        try {
-            await deleteProduct(id);
+        const result = await deleteProductAction(id);
+        if (result.success) {
             toast({
                 title: "Producto Eliminado",
                 description: "El producto ha sido eliminado exitosamente.",
             });
             router.refresh();
-        } catch (error) {
+        } else {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "No se pudo eliminar el producto.",
+                description: result.message || "No se pudo eliminar el producto.",
             });
         }
     }
