@@ -5,14 +5,18 @@ import { createOrder, getProductById, createProduct, updateProduct, deleteProduc
 import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { getAuth } from 'firebase-admin/auth';
+import { auth } from '@/lib/firebase/admin';
 import { redirect } from 'next/navigation';
 
 // AUTH ACTIONS
 export async function createSession(idToken: string) {
+    if (!auth) {
+        console.error("Auth service is not available for session creation.");
+        return { success: false, error: "Authentication service not configured." };
+    }
     try {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-        const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
+        const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
         cookies().set("session", sessionCookie, {
             maxAge: expiresIn,
             httpOnly: true,
@@ -53,7 +57,7 @@ export type State = {
 };
 
 async function sendWhatsAppNotification(order: Order) {
-    const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\n');
+    const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\\n');
     const message = `
 📦 ¡Nuevo pedido en PuraBombilla! 📦
 *N° de Pedido:* ${order.id}
@@ -139,6 +143,9 @@ export async function createOrderAction(prevState: State, formData: FormData): P
 
   } catch (error) {
     console.error("Error creating order action:", error);
+    if(error instanceof Error) {
+        return { message: error.message };
+    }
     return {
       message: 'Error en la base de datos: No se pudo crear el pedido.',
     };

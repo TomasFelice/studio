@@ -1,21 +1,7 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { Product, Order, OrderItem } from './types';
 import { categories } from './constants';
-
-// Firebase Admin SDK Configuration
-try {
-    if (!getApps().length) {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-        initializeApp({
-            credential: cert(serviceAccount)
-        });
-    }
-} catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error.message || String(error));
-}
-
-const db = getApps().length ? getFirestore() : null;
+import { db } from './firebase/admin';
 
 // Product Functions
 export const getProducts = async (category?: string): Promise<Product[]> => {
