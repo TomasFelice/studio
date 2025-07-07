@@ -1,5 +1,4 @@
 import {NextRequest, NextResponse} from 'next/server';
-import {cookies} from 'next/headers';
 import {initializeApp, getApps, cert} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 
@@ -17,8 +16,9 @@ try {
 }
 
 export async function middleware(request: NextRequest) {
-  const session = cookies().get('session')?.value || '';
+  const session = request.cookies.get('session')?.value;
 
+  // If no session cookie, redirect to login for admin pages, otherwise continue.
   if (!session) {
     if (request.nextUrl.pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -26,23 +26,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Verify the session cookie. If invalid, redirect to login and clear the cookie.
   try {
-    const decodedClaims = await getAuth().verifySessionCookie(session, true);
-    if (!decodedClaims) {
-        throw new Error("Invalid session cookie");
-    }
+    await getAuth().verifySessionCookie(session, true);
   } catch (error) {
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('session');
+    return response;
   }
 
+  // If the user is authenticated and visits the login page, redirect to the admin dashboard.
   if (request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
-  
+
   return NextResponse.next();
 }
+
+// Force middleware to run on Node.js runtime.
+export const runtime = 'nodejs';
 
 export const config = {
   matcher: ['/admin/:path*', '/login'],
