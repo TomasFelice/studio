@@ -31,7 +31,7 @@ export default function LoginPage() {
       const sessionResult = await createSession(idToken);
       if (sessionResult.success) {
         toast({ title: "Inicio de sesión exitoso" });
-        router.push('/admin');
+        window.location.assign('/admin');
       } else {
         throw new Error(sessionResult.error || "No se pudo crear la sesión");
       }
