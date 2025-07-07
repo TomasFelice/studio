@@ -1,8 +1,7 @@
-
+// src/middleware.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@/lib/firebase/admin';
 
-// This is crucial to run firebase-admin in the middleware
 export const runtime = 'nodejs';
 
 export async function middleware(request: NextRequest) {
@@ -10,17 +9,18 @@ export async function middleware(request: NextRequest) {
   const isTryingToAccessAdmin = request.nextUrl.pathname.startsWith('/admin');
   const isTryingToAccessLogin = request.nextUrl.pathname === '/login';
 
-  // If auth service is not configured, we can't verify sessions.
-  // This is a critical server error. Treat as unauthenticated.
+  // Si auth es null, significa que Firebase Admin no se pudo inicializar
   if (!auth) {
-    console.error("CRITICAL: Auth service is not configured on the server. Check Firebase Admin initialization in logs.");
+    console.error("CRITICAL: Firebase Admin not initialized. Check FIREBASE_SERVICE_ACCOUNT_KEY.");
+    
+    // Redirigir a login si intenta acceder a admin
     if (isTryingToAccessAdmin) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     return NextResponse.next();
   }
 
-  // If there's no session cookie, redirect to login if accessing admin pages
+  // Si no hay sesión, redirigir a login si accede a páginas admin
   if (!session) {
     if (isTryingToAccessAdmin) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -28,23 +28,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // If there is a session, verify it
+  // Verificar la sesión
   try {
     await auth.verifySessionCookie(session, true);
     
-    // Session is valid. If user is on login page, redirect to admin.
+    // Sesión válida. Si está en login, redirigir a admin
     if (isTryingToAccessLogin) {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
 
   } catch (error) {
-    // Session is invalid.
     console.error("Session verification failed:", error);
-    // Redirect to login if trying to access admin pages.
+    
     if (isTryingToAccessAdmin) {
-        const response = NextResponse.redirect(new URL('/login', request.url));
-        response.cookies.delete('session'); // Clear the invalid cookie
-        return response;
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('session');
+      return response;
     }
   }
 
@@ -52,12 +51,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  /*
-   * Match all request paths except for the ones starting with:
-   * - _next/static (static files)
-   * - _next/image (image optimization files)
-   * - favicon.ico (favicon file)
-   * This is to avoid running the middleware on static assets.
-   */
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)', '/admin/:path*', '/login'],
 };
