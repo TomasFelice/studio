@@ -1,6 +1,6 @@
 // src/middleware.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { auth } from '@/lib/firebase/admin';
+import { auth } from './src/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 

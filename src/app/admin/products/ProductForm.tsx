@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateProductAction } from '@/lib/actions';
 import { categories } from '@/lib/constants';
 import type { Product } from '@/lib/types';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { app as firebaseApp } from '@/lib/firebase/client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +38,9 @@ export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>(product?.images || []);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -68,6 +73,39 @@ export function ProductForm({ product }: { product?: Product }) {
         title: "Error",
         description: result.message,
       });
+    }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files) return;
+    setSelectedFiles(Array.from(e.target.files));
+  }
+
+  async function handleUpload() {
+    if (!selectedFiles.length) return;
+    setUploading(true);
+    try {
+      const storage = getStorage(firebaseApp);
+      const urls: string[] = [];
+      for (const file of selectedFiles) {
+        const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        urls.push(url);
+      }
+      setUploadedUrls(prev => [...prev, ...urls]);
+      // Actualiza el campo del formulario con las nuevas URLs
+      form.setValue('images', [...uploadedUrls, ...urls].join(','));
+    } catch (error) {
+      console.error('Error al subir imágenes:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al subir imágenes',
+        description: 'Verifica tu conexión o los permisos de Firebase Storage.'
+      });
+    } finally {
+      setUploading(false);
+      setSelectedFiles([]);
     }
   }
 
@@ -139,17 +177,58 @@ export function ProductForm({ product }: { product?: Product }) {
                 )}
               />
             </div>
+            {/* Campo de imágenes: input file y previsualización */}
             <FormField
               control={form.control}
               name="images"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Imágenes (URLs)</FormLabel>
+                  <FormLabel>Imágenes</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="https://placehold.co/600x600.png, https://placehold.co/600x400.png" {...field} />
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleFileChange}
+                        disabled={uploading}
+                      />
+                      <Button type="button" onClick={handleUpload} disabled={uploading || !selectedFiles.length}>
+                        {uploading ? 'Subiendo...' : 'Subir Imágenes'}
+                      </Button>
+                      <Textarea
+                        placeholder="https://..."
+                        {...field}
+                        value={uploadedUrls.join(',')}
+                        onChange={e => {
+                          field.onChange(e);
+                          setUploadedUrls(e.target.value.split(','));
+                        }}
+                        className="hidden"
+                      />
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {uploadedUrls.filter(url => !!url).map((url, idx) => (
+                          <div key={idx} className="relative group">
+                            <img src={url} alt={`img-${idx}`} className="w-20 h-20 object-cover rounded border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newUrls = uploadedUrls.filter((_, i) => i !== idx);
+                                setUploadedUrls(newUrls);
+                                form.setValue('images', newUrls.join(','));
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-80 hover:opacity-100 transition-opacity"
+                              title="Eliminar imagen"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </FormControl>
                   <FormDescription>
-                    Pega las URLs de las imágenes, separadas por comas. La primera será la principal.
+                    Adjunta imágenes del producto. Puedes subir varias. La primera será la principal.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
