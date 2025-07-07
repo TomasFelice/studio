@@ -1,7 +1,8 @@
+
 "use server";
 
 import { z } from 'zod';
-import { createOrder, getProductById, createProduct, updateProduct, deleteProduct } from './data';
+import { createOrder, getProductById, createProduct, updateProduct, deleteProduct, updateOrderStatus } from './data';
 import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -20,7 +21,7 @@ export async function createSession(idToken: string) {
         cookies().set("session", sessionCookie, {
             maxAge: expiresIn,
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
             path: "/",
         });
         return { success: true };
@@ -184,6 +185,17 @@ export async function createManualOrderAction(data: z.infer<typeof manualOrderSc
         return { success: true, message: "Pedido manual creado con éxito." };
     } catch (error) {
         return { success: false, message: "Error al crear el pedido manual." };
+    }
+}
+
+export async function updateOrderStatusAction(id: string, status: Order['status']) {
+    try {
+        await updateOrderStatus(id, status);
+        revalidatePath(`/admin/orders/${id}`);
+        revalidatePath(`/admin/orders`);
+    } catch (error) {
+        console.error("Error updating order status action:", error);
+        return { success: false, message: "No se pudo actualizar el estado del pedido." };
     }
 }
 

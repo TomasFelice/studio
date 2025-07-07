@@ -1,50 +1,51 @@
-// middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+
+import { NextResponse, type NextRequest } from 'next/server';
+import { auth } from '@/lib/firebase/admin';
+
+// This is crucial for firebase-admin to work in the middleware
+export const runtime = 'nodejs';
+
+async function verifySessionCookie(session: string | undefined) {
+    if (!session || !auth) return false;
+    try {
+        await auth.verifySessionCookie(session, true);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
 
 export async function middleware(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
+    const session = request.cookies.get('session')?.value;
+    const sessionIsValid = await verifySessionCookie(session);
 
-  // Si no hay cookie de sesión, redirigir a login para páginas admin
-  if (!session) {
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    const isTryingToAccessAdmin = request.nextUrl.pathname.startsWith('/admin');
+    const isTryingToAccessLogin = request.nextUrl.pathname === '/login';
+
+    // If session is valid and user tries to access login page, redirect to admin
+    if (sessionIsValid && isTryingToAccessLogin) {
+        return NextResponse.redirect(new URL('/admin', request.url));
     }
+
+    // If session is not valid and user tries to access a protected admin page, redirect to login
+    if (!sessionIsValid && isTryingToAccessAdmin) {
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        // Clear the invalid cookie
+        response.cookies.delete('session');
+        return response;
+    }
+
+    // Allow the request to proceed
     return NextResponse.next();
-  }
-
-  // Verificar la sesión en el servidor usando una API route
-  try {
-    const verifyUrl = new URL('/api/verify-session', request.url);
-    const response = await fetch(verifyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ session }),
-    });
-
-    if (!response.ok) {
-      // Sesión inválida
-      const loginResponse = NextResponse.redirect(new URL('/login', request.url));
-      loginResponse.cookies.delete('session');
-      return loginResponse;
-    }
-  } catch (error) {
-    console.error('Error verifying session:', error);
-    const loginResponse = NextResponse.redirect(new URL('/login', request.url));
-    loginResponse.cookies.delete('session');
-    return loginResponse;
-  }
-
-  // Si está autenticado y visita login, redirigir a admin
-  if (request.nextUrl.pathname === '/login') {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
-  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login'],
+    /*
+    * Match all request paths except for the ones starting with:
+    * - _next/static (static files)
+    * - _next/image (image optimization files)
+    * - favicon.ico (favicon file)
+    * This is to avoid running the middleware on static assets.
+    */
+    matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
