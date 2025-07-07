@@ -1,12 +1,16 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { auth } from '@/lib/firebase/admin';
+
+// This is crucial to run firebase-admin in the middleware
+export const runtime = 'nodejs';
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
   const isTryingToAccessAdmin = request.nextUrl.pathname.startsWith('/admin');
   const isTryingToAccessLogin = request.nextUrl.pathname === '/login';
 
-  // If there's no session, redirect to login for admin pages, otherwise continue
+  // If there's no session cookie, handle redirection
   if (!session) {
     if (isTryingToAccessAdmin) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -14,26 +18,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // If there is a session, verify it with our API route
-  const response = await fetch(new URL('/api/verify-session', request.url), {
-    headers: {
-      'Cookie': `session=${session}`,
-    },
-    method: 'POST',
-  });
+  // If there is a session, verify it
+  try {
+    if (!auth) {
+        throw new Error("Auth service is not configured on the server.");
+    }
+    await auth.verifySessionCookie(session, true);
+    
+    // Session is valid. If user is on login page, redirect to admin.
+    if (isTryingToAccessLogin) {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
 
-  const { valid } = await response.json();
-
-  // If session is valid and user is on login page, redirect to admin
-  if (valid && isTryingToAccessLogin) {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
-  // If session is invalid and user is trying to access admin, redirect to login
-  if (!valid && isTryingToAccessAdmin) {
-    const res = NextResponse.redirect(new URL('/login', request.url));
-    res.cookies.delete('session'); // Clear the invalid cookie
-    return res;
+  } catch (error) {
+    console.error("Session verification failed:", error);
+    // Session is invalid. Redirect to login if trying to access admin pages.
+    if (isTryingToAccessAdmin) {
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        response.cookies.delete('session'); // Clear the invalid cookie
+        return response;
+    }
   }
 
   return NextResponse.next();
