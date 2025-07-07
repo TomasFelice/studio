@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { getProductById } from '@/lib/data';
+import { getProductByIdAction } from '@/lib/actions';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ export default function ProductDetailPage() {
     }
     const fetchProduct = async () => {
       setLoading(true);
-      const fetchedProduct = await getProductById(params.id);
+      const fetchedProduct = await getProductByIdAction(params.id as string);
       setProduct(fetchedProduct);
       setLoading(false);
     };

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateProductAction } from '@/lib/actions';
-import { categories } from '@/lib/data';
+import { categories } from '@/lib/constants';
 import type { Product } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export function ProductForm({ product }: { product?: Product }) {
       description: product?.description || '',
       price: product?.price || 0,
       category: product?.category || '',
-      images: product?.images.join(',\n') || '',
+      images: product?.images.join(',\\n') || '',
       featured: product?.featured || false,
     },
   });

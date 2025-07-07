@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getFeaturedProducts, categories } from '@/lib/data';
+import { getFeaturedProducts } from '@/lib/data';
+import { categories } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductCard } from '@/components/ProductCard';

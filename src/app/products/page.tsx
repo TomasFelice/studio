@@ -1,4 +1,5 @@
-import { getProducts, categories } from '@/lib/data';
+import { getProducts } from '@/lib/data';
+import { categories } from '@/lib/constants';
 import { ProductCard } from '@/components/ProductCard';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';

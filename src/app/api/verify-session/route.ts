@@ -1,35 +1,32 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { NextResponse, type NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 
-// Inicializar Firebase Admin
+// Ensure Firebase Admin is initialized
 if (!getApps().length) {
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY!
-  );
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+  try {
+    const serviceAccount = JSON.parse(
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY!
+    );
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } catch (error: any) {
+    console.error('Firebase Admin SDK initialization error in API route:', error.message);
+  }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  const { session } = req.body;
+export async function POST(request: NextRequest) {
+  const { session } = await request.json();
 
   if (!session) {
-    return res.status(401).json({ message: 'No session provided' });
+    return NextResponse.json({ message: 'No session provided' }, { status: 401 });
   }
 
   try {
     await getAuth().verifySessionCookie(session, true);
-    return res.status(200).json({ valid: true });
+    return NextResponse.json({ valid: true }, { status: 200 });
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid session' });
+    return NextResponse.json({ message: 'Invalid session' }, { status: 401 });
   }
 }

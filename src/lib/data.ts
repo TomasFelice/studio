@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import type { Product, Category, Order, OrderItem } from './types';
+import type { Product, Order, OrderItem } from './types';
+import { categories } from './constants';
 
 // Firebase Admin SDK Configuration
 try {
@@ -11,22 +12,10 @@ try {
         });
     }
 } catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error.message);
+    console.error("Failed to initialize Firebase Admin SDK:", error.message || String(error));
 }
 
 const db = getApps().length ? getFirestore() : null;
-
-// Mock Data for Categories (can be moved to Firestore later)
-export const categories: Category[] = [
-  { id: '1', name: 'Mates de Calabaza', slug: 'mates-calabaza' },
-  { id: '2', name: 'Mates de Algarrobo', slug: 'mates-algarrobo' },
-  { id: '3', name: 'Mates de Acero', slug: 'mates-acero' },
-  { id: '4', name: 'Bombillas', slug: 'bombillas' },
-  { id: '5', name: 'Termos', slug: 'termos' },
-  { id: '6', name: 'Yerberas', slug: 'yerberas' },
-  { id: '7', name: 'Yerbas', slug: 'yerbas' },
-];
-
 
 // Product Functions
 export const getProducts = async (category?: string): Promise<Product[]> => {

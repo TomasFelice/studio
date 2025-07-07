@@ -182,6 +182,10 @@ export async function createManualOrderAction(data: z.infer<typeof manualOrderSc
 
 
 // PRODUCT ACTIONS
+export async function getProductByIdAction(id: string): Promise<Product | null> {
+    return getProductById(id);
+}
+
 const productSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
