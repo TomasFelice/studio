@@ -59,7 +59,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex items-center gap-2 justify-center mb-4">
-                <Logo className="h-6 w-6 text-primary" />
+                <Logo className="h-12 w-12 text-primary" />
                 <span className="font-bold font-headline text-xl">PuraBombilla</span>
             </div>
           <CardTitle className="font-headline text-2xl">Panel de Administración</CardTitle>
