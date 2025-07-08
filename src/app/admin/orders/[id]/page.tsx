@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge";
 
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+type OrderDetailsPageProps = {
+  params: { id: string };
+};
+
+export default async function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const order = await getOrderById(params.id);
 
   if (!order) {
