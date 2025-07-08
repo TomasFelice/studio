@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Leaf } from 'lucide-react';
+import { Logo } from './Logo';
 import { CartIcon } from './CartIcon';
 
 export function Header() {
@@ -7,7 +7,7 @@ export function Header() {
     <header className="bg-background/80 sticky top-0 z-40 w-full border-b backdrop-blur-sm">
       <div className="container flex h-16 items-center">
         <Link href="/" className="flex items-center gap-2 mr-6">
-          <Leaf className="h-6 w-6 text-primary" />
+          <Logo className="h-6 w-6 text-primary" />
           <span className="font-bold font-headline text-xl">PuraBombilla</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm font-medium">

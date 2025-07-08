@@ -16,6 +16,7 @@ import { removeSession } from "@/lib/actions"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/firebase/admin"
+import { Logo } from "@/components/Logo"
 
 export default async function AdminLayout({
   children,
@@ -39,6 +40,7 @@ export default async function AdminLayout({
             <SidebarHeader>
                 <div className="flex items-center gap-2 p-2">
                     <SidebarTrigger />
+                    <Logo className="text-primary group-data-[collapsible=icon]:hidden duration-300" />
                     <span className="font-headline font-bold text-lg group-data-[collapsible=icon]:hidden duration-300">PuraBombilla</span>
                 </div>
             </SidebarHeader>

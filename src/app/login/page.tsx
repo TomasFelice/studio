@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Leaf, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,7 +59,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex items-center gap-2 justify-center mb-4">
-                <Leaf className="h-6 w-6 text-primary" />
+                <Logo className="h-6 w-6 text-primary" />
                 <span className="font-bold font-headline text-xl">PuraBombilla</span>
             </div>
           <CardTitle className="font-headline text-2xl">Panel de Administración</CardTitle>
