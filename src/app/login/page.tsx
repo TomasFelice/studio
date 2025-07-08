@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
-import { createSession } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,12 +27,18 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
       
-      const sessionResult = await createSession(idToken);
-      if (sessionResult.success) {
+      // Llamar al endpoint API para crear la cookie de sesión
+      const res = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (data.success) {
         toast({ title: "Inicio de sesión exitoso" });
         window.location.assign('/admin');
       } else {
-        throw new Error(sessionResult.error || "No se pudo crear la sesión");
+        throw new Error(data.error || "No se pudo crear la sesión");
       }
 
     } catch (err: any) {

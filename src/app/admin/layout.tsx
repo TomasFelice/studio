@@ -13,12 +13,26 @@ import {
 import { Home, Package, ShoppingCart, User, LogOut } from "lucide-react"
 import Link from "next/link"
 import { removeSession } from "@/lib/actions"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/firebase/admin"
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Verificar sesión en el server
+  const session = cookies().get('session')?.value;
+  if (!session || !auth) {
+    redirect('/login');
+  }
+  try {
+    await auth.verifySessionCookie(session, true);
+  } catch {
+    redirect('/login');
+  }
+
   return (
     <SidebarProvider>
         <Sidebar>
