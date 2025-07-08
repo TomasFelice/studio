@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -96,12 +97,16 @@ export function ProductForm({ product }: { product?: Product }) {
       setUploadedUrls(prev => [...prev, ...urls]);
       // Actualiza el campo del formulario con las nuevas URLs
       form.setValue('images', [...uploadedUrls, ...urls].join(','));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al subir imágenes:', error);
+      let description = 'Verifica tu conexión o los permisos de Firebase Storage.';
+      if (error.code === 'storage/unauthorized') {
+        description = "No tienes permiso para subir archivos. Revisa las reglas de seguridad de Firebase Storage en la consola de Firebase.";
+      }
       toast({
         variant: 'destructive',
         title: 'Error al subir imágenes',
-        description: 'Verifica tu conexión o los permisos de Firebase Storage.'
+        description: description,
       });
     } finally {
       setUploading(false);
