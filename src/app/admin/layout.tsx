@@ -40,7 +40,7 @@ export default async function AdminLayout({
             <SidebarHeader>
                 <div className="flex items-center gap-2 p-2">
                     <SidebarTrigger />
-                    <Logo className="h-8 w-8 text-primary group-data-[collapsible=icon]:hidden duration-300" />
+                    <Logo className="h-10 w-10 text-primary group-data-[collapsible=icon]:hidden duration-300" />
                     <span className="font-headline font-bold text-lg group-data-[collapsible=icon]:hidden duration-300">PuraBombilla</span>
                 </div>
             </SidebarHeader>
