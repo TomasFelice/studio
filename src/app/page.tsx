@@ -21,11 +21,11 @@ export default async function Home() {
     <div>
       <section className="relative w-full h-[560px] flex items-center justify-center text-white">
         <Image
-          src="https://placehold.co/1920x1080.png"
+          src="https://firebasestorage.googleapis.com/v0/b/purabombilla-web.firebasestorage.app/o/static%2Fbanner.jpg?alt=media"
           alt="Banner de mates"
           fill
           className="object-cover -z-20"
-          data-ai-hint="mate ceremony"
+          priority
         />
         <div className="absolute inset-0 bg-black/50 -z-10" />
         <div className="container mx-auto text-center z-10">
