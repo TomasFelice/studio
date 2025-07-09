@@ -6,11 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, Package } from 'lucide-react';
 import Link from 'next/link';
 
-type OrderConfirmationPageProps = {
-  params: { id: string };
-};
-
-export default async function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
+export default async function OrderConfirmationPage({ params }: { params: { id: string } }) {
   const order = await getOrderById(params.id);
 
   if (!order) {
