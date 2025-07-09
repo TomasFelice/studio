@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useFormStatus } from 'react-dom';
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
                 description: state.message,
             })
         }
-    }, [state, clearCart, router, toast]);
+    }, [state, router, toast]);
 
     const handleFormSubmit = (formData: FormData) => {
         if(cartItems.length === 0) {
