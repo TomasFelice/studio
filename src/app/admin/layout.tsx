@@ -17,6 +17,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/firebase/admin"
 import { Logo } from "@/components/Logo"
+import { MobileSidebarTrigger } from "@/components/MobileSidebarTrigger"
 
 export default async function AdminLayout({
   children,
@@ -24,7 +25,15 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   // Verificar sesión en el server
-  const session = cookies().get('session')?.value;
+  let session: string | undefined = undefined;
+  try {
+    // cookies() puede ser async o sync según el entorno, pero en Next.js 13+ server components es sync
+    const cookieStore = cookies();
+    session = cookieStore.get('session')?.value;
+  } catch {
+    // fallback: no hay sesión
+    session = undefined;
+  }
   if (!session || !auth) {
     redirect('/login');
   }
@@ -36,55 +45,58 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <Sidebar>
-            <SidebarHeader>
-                <div className="flex items-center gap-2 p-2">
-                    <SidebarTrigger />
-                    <Logo className="h-10 w-10 text-primary group-data-[collapsible=icon]:hidden duration-300" />
-                    <span className="font-headline font-bold text-lg group-data-[collapsible=icon]:hidden duration-300">PuraBombilla</span>
-                </div>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Dashboard">
-                            <Link href="/admin"><Home/>Dashboard</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Productos">
-                            <Link href="/admin/products"><Package/>Productos</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Pedidos">
-                            <Link href="/admin/orders"><ShoppingCart/>Pedidos</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                         <SidebarMenuButton asChild tooltip="Mi Cuenta">
-                            <Link href="#"><User/>Admin</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <form action={removeSession} className="w-full">
-                            <SidebarMenuButton type="submit" className="w-full" tooltip="Cerrar Sesión">
-                                <LogOut/>Cerrar Sesión
-                            </SidebarMenuButton>
-                        </form>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-            <div className="p-4 sm:p-6 lg:p-8">
-                {children}
+      {/* Botón flotante para mobile */}
+      <MobileSidebarTrigger />
+      <Sidebar>
+        <SidebarHeader>
+            <div className="flex items-center gap-2 p-2">
+                <SidebarTrigger />
+                <Logo className="h-10 w-10 text-primary group-data-[collapsible=icon]:hidden duration-300" />
+                <span className="font-headline font-bold text-lg group-data-[collapsible=icon]:hidden duration-300">PuraBombilla</span>
             </div>
-        </SidebarInset>
-    </SidebarProvider>
+        </SidebarHeader>
+        <SidebarContent>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Dashboard">
+                        <Link href="/admin"><Home/>Dashboard</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Productos">
+                        <Link href="/admin/products"><Package/>Productos</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Pedidos">
+                        <Link href="/admin/orders"><ShoppingCart/>Pedidos</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                     <SidebarMenuButton asChild tooltip="Mi Cuenta">
+                        <Link href="#"><User/>Admin</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <form action={removeSession} className="w-full">
+                        <SidebarMenuButton type="submit" className="w-full" tooltip="Cerrar Sesión">
+                            <LogOut/>Cerrar Sesión
+                        </SidebarMenuButton>
+                    </form>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
+    </Sidebar>
+    <SidebarInset>
+        <div className="p-4 sm:p-6 lg:p-8 transition-all duration-300"
+             style={{ paddingLeft: 'var(--sidebar-width-icon, 3rem)' }}>
+            {children}
+        </div>
+    </SidebarInset>
+</SidebarProvider>
   )
 }

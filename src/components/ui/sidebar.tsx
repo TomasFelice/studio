@@ -4,13 +4,15 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import { Home, Package, ShoppingCart, User, LogOut } from "lucide-react"
+import Link from "next/link"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -175,7 +177,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, state, openMobile, setOpenMobile, toggleSidebar } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -198,15 +200,13 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-            side={side}
+            className="w-full max-w-xs bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            style={{ '--sidebar-width': SIDEBAR_WIDTH_MOBILE } as React.CSSProperties}
+            side="left"
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            {/* Título accesible para screen readers */}
+            <SheetTitle style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>Menú lateral</SheetTitle>
+            <div className="flex h-full w-full flex-col bg-white dark:bg-neutral-900">{children}</div>
           </SheetContent>
         </Sheet>
       )
@@ -215,23 +215,51 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
+        className={cn(
+          "group peer hidden md:block text-sidebar-foreground transition-all duration-300",
+          state === "collapsed" ? "w-[--sidebar-width-icon]" : "w-[--sidebar-width]"
+        )}
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
       >
-        {/* This is what handles the sidebar gap on desktop */}
-        <div
-          className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
-          )}
-        />
+        {/* Sidebar rail (iconos) visible cuando está colapsado */}
+        {state === "collapsed" && (
+           <div
+             className="flex flex-col items-center justify-between h-full w-full bg-sidebar border-r cursor-pointer py-4"
+             style={{ minWidth: 'var(--sidebar-width-icon, 3rem)' }}
+           >
+             {/* Icono de menú para expandir */}
+             <button onClick={() => toggleSidebar()} className="mb-4 p-2 rounded hover:bg-sidebar-accent">
+               <PanelLeft />
+             </button>
+             {/* Iconos de las opciones principales */}
+             <div className="flex flex-col gap-4 flex-1 items-center justify-center">
+               <Link href="/admin" title="Dashboard" className="p-2 rounded hover:bg-sidebar-accent">
+                 <Home />
+               </Link>
+               <Link href="/admin/products" title="Productos" className="p-2 rounded hover:bg-sidebar-accent">
+                 <Package />
+               </Link>
+               <Link href="/admin/orders" title="Pedidos" className="p-2 rounded hover:bg-sidebar-accent">
+                 <ShoppingCart />
+               </Link>
+             </div>
+             {/* Iconos de cuenta y logout */}
+             <div className="flex flex-col gap-4 items-center mb-2">
+               <Link href="#" title="Mi Cuenta" className="p-2 rounded hover:bg-sidebar-accent">
+                 <User />
+               </Link>
+               <form action="/api/session" method="POST">
+                 <button type="submit" title="Cerrar Sesión" className="p-2 rounded hover:bg-sidebar-accent">
+                   <LogOut />
+                 </button>
+               </form>
+             </div>
+           </div>
+         )}
+        {/* Sidebar expandido */}
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
@@ -556,13 +584,19 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
 
+    // Aumentar tamaño si expandido
+    const expanded = state === "expanded"
     const button = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(
+          sidebarMenuButtonVariants({ variant, size }),
+          expanded && "text-lg [&>svg]:text-2xl",
+          className
+        )}
         {...props}
       />
     )
