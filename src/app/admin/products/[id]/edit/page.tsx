@@ -2,7 +2,11 @@ import { getProductById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { ProductForm } from "../../ProductForm";
 
-export default async function EditProductPage({ params }: { params: { id: string } }) {
+type EditProductPageProps = {
+  params: { id: string };
+};
+
+export default async function EditProductPage({ params }: EditProductPageProps) {
   const product = await getProductById(params.id);
 
   if (!product) {
