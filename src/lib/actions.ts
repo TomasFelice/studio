@@ -57,46 +57,50 @@ export type State = {
   orderId?: string;
 };
 
-async function sendWhatsAppNotification(order: Order) {
-    const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\n');
-    const whatsappMessage = `
-📦 *¡Nuevo pedido en PuraBombilla!* 📦
+function escapeMarkdownV2(text: string) {
+  // Lista de caracteres que deben ser escapados en MarkdownV2
+  const charsToEscape = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  let escapedText = text;
+  for (const char of charsToEscape) {
+    escapedText = escapedText.replace(new RegExp(`\\${char}`, 'g'), `\\${char}`);
+  }
+  return escapedText;
+}
 
-*N° de Pedido:* ${order.id}
-*Fecha:* ${new Date(order.createdAt).toLocaleString('es-AR')}
+async function sendTelegramNotification(order: Order) {
+    const messageItems = order.items.map(item => escapeMarkdownV2(`- ${item.quantity}x ${item.productName}`)).join('\n');
+    const message = `
+🛍️ *Nuevo pedido \\#${escapeMarkdownV2(order.id)}*
 
-*Cliente:*
-- *Nombre:* ${order.customerName}
-- *WhatsApp:* ${order.customerWhatsapp}
+👤 *Cliente:* ${escapeMarkdownV2(order.customerName)}
+📱 *WhatsApp:* ${escapeMarkdownV2(order.customerWhatsapp)}
+📍 *Dirección:* ${escapeMarkdownV2(order.customerAddress)}
 
-*Detalle:*
+📦 *Productos:*
 ${messageItems}
 
-*Total:* $${order.total.toLocaleString('es-AR')}
+💰 *Total:* $${escapeMarkdownV2(order.total.toLocaleString('es-AR'))}
+    `;
 
-*Dirección/Notas:*
-${order.customerAddress}
-
-*Origen:* ${order.isManual ? 'Manual' : 'Tienda Online'}
-    `.trim();
-
-    const phoneNumber = "1158470217";
-    const encodedMessage = encodeURIComponent(whatsappMessage);
-    const url = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-
-    console.log("--- START WHATSAPP NOTIFICATION ---");
-    console.log(`To: ${phoneNumber}`);
-    console.log(whatsappMessage);
-    
     try {
-        // We use fetch in a "fire and forget" way. We don't need to wait for the response.
-        fetch(url, { method: 'GET' }).catch(e => console.error("Error sending whatsapp message in background", e));
-        console.log("WhatsApp notification request sent.");
+        const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: process.env.TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'MarkdownV2'
+            })
+        });
+        const result = await response.json();
+        if (result.ok) {
+            console.log("Telegram notification sent successfully");
+        } else {
+            console.error("Error sending Telegram message:", result.description);
+        }
     } catch (error) {
-        console.error("Failed to send WhatsApp notification:", error);
+        console.error("Error sending Telegram message:", error);
     }
-    
-    console.log("--- END WHATSAPP NOTIFICATION ---");
 }
 
 
@@ -156,7 +160,7 @@ export async function createOrderAction(prevState: State, formData: FormData): P
     });
     
     // Non-blocking call to send notification
-    sendWhatsAppNotification(newOrder).catch(console.error);
+    sendTelegramNotification(newOrder).catch(console.error);
 
     revalidatePath('/admin/orders');
     revalidatePath('/admin');
@@ -201,7 +205,7 @@ export async function createManualOrderAction(data: z.infer<typeof manualOrderSc
         });
 
         // Non-blocking call to send notification
-        sendWhatsAppNotification(newOrder).catch(console.error);
+        sendTelegramNotification(newOrder).catch(console.error);
         
         revalidatePath('/admin/orders');
         revalidatePath('/admin');
