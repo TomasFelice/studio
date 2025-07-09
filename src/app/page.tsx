@@ -19,24 +19,30 @@ export default async function Home() {
   
   return (
     <div>
-      <section className="relative w-full h-[560px] flex items-center justify-center text-white">
+      <section className="relative w-full text-white">
+        {/* The Image component now dictates the container's aspect ratio */}
         <Image
           src="https://firebasestorage.googleapis.com/v0/b/purabombilla-web.firebasestorage.app/o/static%2Fbanner.jpg?alt=media"
           alt="Banner de mates"
-          fill
-          className="object-cover -z-20"
+          width={1920}
+          height={1080}
+          className="w-full h-auto block" // `block` removes any bottom space
           priority
         />
-        <div className="absolute inset-0 bg-black/50 -z-10" />
-        <div className="container mx-auto text-center z-10">
-          <h1 className="font-headline text-4xl md:text-6xl font-bold">El Arte de un Buen Mate</h1>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-white/90">
-            Descubrí nuestra selección de mates, bombillas y accesorios artesanales.
-            Calidad y tradición en cada producto.
-          </p>
-          <Button asChild size="lg" className="mt-8">
-            <Link href="/products">Ver Productos <ArrowRight className="ml-2 h-5 w-5" /></Link>
-          </Button>
+        
+        {/* This container holds the overlay and the text content, positioned over the image */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="container mx-auto text-center z-10 p-4">
+            <h1 className="font-headline text-4xl md:text-6xl font-bold">El Arte de un Buen Mate</h1>
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-white/90">
+              Descubrí nuestra selección de mates, bombillas y accesorios artesanales.
+              Calidad y tradición en cada producto.
+            </p>
+            <Button asChild size="lg" className="mt-8">
+              <Link href="/products">Ver Productos <ArrowRight className="ml-2 h-5 w-5" /></Link>
+            </Button>
+          </div>
         </div>
       </section>
 
