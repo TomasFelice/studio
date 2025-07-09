@@ -18,7 +18,8 @@ export async function createSession(idToken: string) {
     try {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-        cookies().set("session", sessionCookie, {
+        const cookieStore = await cookies();
+        cookieStore.set("session", sessionCookie, {
             maxAge: expiresIn,
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -32,7 +33,8 @@ export async function createSession(idToken: string) {
 }
 
 export async function removeSession() {
-    cookies().delete("session");
+    const cookieStore = await cookies();
+    cookieStore.delete("session");
     redirect("/login");
 }
 
@@ -92,7 +94,7 @@ ${messageItems}
                 parse_mode: 'MarkdownV2'
             })
         });
-        const result = await response.json();
+        const result = await response.json() as { ok: boolean; description?: string };
         if (result.ok) {
             console.log("Telegram notification sent successfully");
         } else {
