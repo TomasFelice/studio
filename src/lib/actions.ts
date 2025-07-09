@@ -6,6 +6,7 @@ import type { CartItem, Order, OrderItem, Product } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import fetch from 'node-fetch';
 
 // AUTH ACTIONS
 export async function createSession(idToken: string) {
@@ -57,25 +58,44 @@ export type State = {
 };
 
 async function sendWhatsAppNotification(order: Order) {
-    const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\\n');
-    const message = `
-📦 ¡Nuevo pedido en PuraBombilla! 📦
+    const messageItems = order.items.map(item => `- ${item.quantity}x ${item.productName}`).join('\n');
+    const whatsappMessage = `
+📦 *¡Nuevo pedido en PuraBombilla!* 📦
+
 *N° de Pedido:* ${order.id}
 *Fecha:* ${new Date(order.createdAt).toLocaleString('es-AR')}
+
 *Cliente:*
 - *Nombre:* ${order.customerName}
 - *WhatsApp:* ${order.customerWhatsapp}
+
 *Detalle:*
 ${messageItems}
+
 *Total:* $${order.total.toLocaleString('es-AR')}
+
 *Dirección/Notas:*
 ${order.customerAddress}
+
 *Origen:* ${order.isManual ? 'Manual' : 'Tienda Online'}
     `.trim();
 
+    const phoneNumber = "1158470217";
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const url = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+
     console.log("--- START WHATSAPP NOTIFICATION ---");
-    console.log(`To: PuraBombilla Business Number`);
-    console.log(message);
+    console.log(`To: ${phoneNumber}`);
+    console.log(whatsappMessage);
+    
+    try {
+        // We use fetch in a "fire and forget" way. We don't need to wait for the response.
+        fetch(url, { method: 'GET' }).catch(e => console.error("Error sending whatsapp message in background", e));
+        console.log("WhatsApp notification request sent.");
+    } catch (error) {
+        console.error("Failed to send WhatsApp notification:", error);
+    }
+    
     console.log("--- END WHATSAPP NOTIFICATION ---");
 }
 
@@ -135,7 +155,8 @@ export async function createOrderAction(prevState: State, formData: FormData): P
         isManual: false,
     });
     
-    await sendWhatsAppNotification(newOrder);
+    // Non-blocking call to send notification
+    sendWhatsAppNotification(newOrder).catch(console.error);
 
     revalidatePath('/admin/orders');
     revalidatePath('/admin');
@@ -179,7 +200,8 @@ export async function createManualOrderAction(data: z.infer<typeof manualOrderSc
             isManual: true,
         });
 
-        await sendWhatsAppNotification(newOrder);
+        // Non-blocking call to send notification
+        sendWhatsAppNotification(newOrder).catch(console.error);
         
         revalidatePath('/admin/orders');
         revalidatePath('/admin');
